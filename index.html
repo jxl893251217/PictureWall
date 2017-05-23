@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<title>three.js css3d - 元素周期表</title>
+<style>
+html, body {
+	height: 100%;
+}
+
+body {
+	background-color: #f3f3f3;
+	margin: 0;
+	font-family: Helvetica, sans-serif;;
+	overflow: hidden;
+}
+
+a {
+	color: #ffffff;
+}
+
+#info {
+	position: absolute;
+	width: 100%;
+	color: #ffffff;
+	padding: 5px;
+	font-family: Monospace;
+	font-size: 13px;
+	font-weight: bold;
+	text-align: center;
+	z-index: 1;
+}
+
+#menu {
+	position: absolute;
+	bottom: 20px;
+	width: 100%;
+	text-align: center;
+}
+
+.element {
+	width: 160px;
+	height: 160px;
+	box-shadow: 0px 0px 12px rgba(0,255,255,0.5);
+	/* border: 1px solid rgba(127,255,255,0.25); */
+	text-align: center;
+	cursor: default;
+}
+
+.element:hover {
+	box-shadow: 0px 0px 12px rgba(0,255,255,0.75);
+	border: 1px solid rgba(127,255,255,0.75);
+ 
+}
+.element:hover .img{
+	-webkit-transform:scale(1.8); 
+	-moz-transform:scale(1.8); 
+	-o-transform:scale(1.8);
+}
+.element .img{
+	width:100%; 
+	height:100%; 
+}
+.element .number {
+	position: absolute;
+	top: 20px;
+	right: 20px;
+	font-size: 12px;
+	color: rgba(127,255,255,0.75);
+}
+
+.element .symbol {
+	position: absolute;
+	top: 40px;
+	left: 0px;
+	right: 0px;
+	font-size: 60px;
+	font-weight: bold;
+	color: rgba(255,255,255,0.75);
+	text-shadow: 0 0 10px rgba(0,255,255,0.95);
+}
+
+.element .details {
+	position: absolute;
+	bottom: 15px;
+	left: 0px;
+	right: 0px;
+	font-size: 12px;
+	color: rgba(127,255,255,0.75);
+}
+
+
+
+.grid.none{
+	display: none;
+}
+.grid {
+  max-width: 70%;
+  max-height:720px;
+  min-width: 60%;
+  min-height: 50%;
+  perspective: 500px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform:translate(-50%,-50%);
+  text-align: center;
+  overflow: hidden;
+}
+.grid img {
+	width: 90px; 
+	height: 90px;
+  display: block; 
+  float: left;
+}
+
+.animate {
+	text-transform: uppercase;
+	background: rgb(0, 100, 0); color: white;
+	padding: 10px 20px; border-radius: 5px;
+	cursor: pointer;margin:10px auto;width:100px;text-align:center;
+}
+.animate:hover {background: rgb(0, 75, 0);}
+</style>
+</head>
+<body>
+<script src="js/three.min.js"></script>
+<script src="js/tween.min.js"></script>
+<script src="js/TrackballControls.js"></script>
+<script src="js/CSS3DRenderer.js"></script>
+
+<script src="js/jquery-2.1.1.min.js"></script>
+<script src="js/jquery.easing.1.3.js"></script>
+
+
+<div id="container"></div>
+<div class="grid none"></div>
+
+
+<script>
+
+
+
+var images = [], count = 150;
+for(var i = 1; i <= count; i++){
+	let j=i
+	if(j>100)
+		j=j-100
+	else if(j>50)
+		j=j-50
+	let str='images/'+j+'.jpg'
+	images.push(str)
+}
+
+
+var imgages_str=''
+var camera,scene, renderer;
+var controls;
+
+var objects = [];
+var targets = {  sphere: [] };
+var vector = new THREE.Vector3();
+
+
+
+init();
+animate();
+changeType(1)
+
+function init() {
+
+	scene = new THREE.Scene();
+	camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 10000 );
+	camera.position.z = 3000;
+	
+
+
+	// table
+	for ( var i = 0; i < images.length; i ++ ) {
+
+		var element = document.createElement( 'div' );
+		element.className = 'element';
+		element.style.backgroundColor = 'rgba(0,127,127,' + ( Math.random() * 0.5 + 0.25 ) + ')';
+
+		var img = document.createElement( 'img' );
+		img.className = 'img';
+		img.src = images[i]
+		element.appendChild( img );
+		imgages_str+='<img src="'+images[i]+'" />'
+
+		var object = new THREE.CSS3DObject( element );
+		object.position.x = Math.random() * 4000 - 2000;
+		object.position.y = Math.random() * 4000 - 2000;
+		object.position.z = Math.random() * 4000 - 2000;
+		scene.add( object );
+
+		objects.push( object );
+
+		//
+
+
+	}
+
+	// sphere
+
+	for ( var i = 0, l = objects.length; i < l; i ++ ) {
+
+		var phi = Math.acos( -1 + ( 2 * i ) / l );
+		var theta = Math.sqrt( l * Math.PI ) * phi;
+
+	  var object = new THREE.Object3D();
+
+		object.position.x = 800 * Math.cos( theta ) * Math.sin( phi );
+		object.position.y = 800 * Math.sin( theta ) * Math.sin( phi );
+		object.position.z = 800 * Math.cos( phi );
+
+		vector.copy( object.position ).multiplyScalar( 2 );
+
+		object.lookAt( vector );
+
+		targets.sphere.push( object );
+
+	}
+
+	
+
+	renderer = new THREE.CSS3DRenderer();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.domElement.style.position = 'absolute';
+	document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+	//
+
+	controls = new THREE.TrackballControls( camera, renderer.domElement );
+	controls.rotateSpeed = 0.5;
+	controls.minDistance = 500;
+	controls.maxDistance = 6000;
+	controls.addEventListener( 'change', render );
+
+
+
+	transform( targets.sphere, 3000 );
+	window.addEventListener( 'resize', onWindowResize, false );
+
+}
+
+function transform( targets, duration ) {
+
+	TWEEN.removeAll();
+
+	for ( var i = 0; i < objects.length; i ++ ) {
+
+		var object = objects[ i ];
+		var target = targets[ i ];
+
+		new TWEEN.Tween( object.position )
+			.to( { x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration )
+			.easing( TWEEN.Easing.Exponential.InOut )
+			.start();
+
+		new TWEEN.Tween( object.rotation )
+			.to( { x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, Math.random() * duration + duration )
+			.easing( TWEEN.Easing.Exponential.InOut )
+			.start();
+
+	}
+
+	new TWEEN.Tween( this )
+		.to( {}, duration * 2 )
+		.onUpdate( render )
+		.start();
+
+}
+
+function onWindowResize() {
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	render();
+
+}
+
+function animate() {
+	requestAnimationFrame( animate );
+	TWEEN.update();
+	controls.update();
+	
+
+}
+
+
+function render() {
+	setTimeout(function(){
+		var timer = Date.now() * 0.0001;
+		camera.position.x = Math.cos( timer ) * 2600;
+		camera.position.z = Math.sin( timer ) * 3000;
+		camera.lookAt( scene.position );
+	},3001)
+	renderer.render( scene, camera );
+	
+}
+
+//转变形态
+function changeType(type){
+	if(type==1)
+		setTimeout(function(){
+			$("#container").empty()
+			for(let i=0;i<objects.length;i++){
+				scene.remove(objects[i])
+			}
+			objects=[]
+			$(".grid").append(imgages_str).removeClass('none');
+			anamiteImg()
+		},20000)
+	else
+		setTimeout(function(){
+			$(".grid").empty().addClass('none')
+			imgages_str=''
+			init();
+			animate();
+			changeType(1)
+		},10000)
+
+}
+
+/*********************************************************/
+/*效果2*/
+function anamiteImg(){
+	$("img").each(function(){
+		d = Math.random()*1000; //1ms to 1000ms delay
+		$(this).delay(d).animate({opacity: 0}, {
+			step: function(n){
+				s = 1-n; //scale - will animate from 0 to 1
+				$(this).css("transform", "scale("+s+")");
+			}, 
+			duration: 1000, 
+		})
+	}).promise().done(function(){
+		//after *promising* and *doing* the fadeout animation we will bring the images back
+		storm();
+	})
+	changeType(2)
+}
+function storm()
+{
+	$("img").each(function(){
+		d = Math.random()*1000;
+		$(this).delay(d).animate({opacity: 1}, {
+			step: function(n){
+				//rotating the images on the Y axis from 360deg to 0deg
+				ry = (1-n)*360;
+				//translating the images from 1000px to 0px
+				tz = (1-n)*1000;
+				//applying the transformation
+				$(this).css("transform", "rotateY("+ry+"deg) translateZ("+tz+"px)");
+			}, 
+			duration: 3000, 
+			//some easing fun. Comes from the jquery easing plugin.
+			easing: 'easeOutQuint', 
+		})
+	})
+}
+</script>
+</body>
+</html>
